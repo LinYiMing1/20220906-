@@ -11,6 +11,7 @@
 // - feat：新增特性
 // - style：样式的修改
 // - fixed：debug
+// - comment：添加了注释
 export default {
 
 }
