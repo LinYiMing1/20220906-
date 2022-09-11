@@ -133,6 +133,7 @@ export default {
       } catch (error) {
         // - axios 错误：给用户提示
         // - JS 导致的：给程序员提示
+        // --- if (error.response?.status===400){...} es11语法，可选链操作符
         if (error.response && error.response.status === 401) {
           this.$toast.fail('用户认证失败，请重新登陆')
         } else {
