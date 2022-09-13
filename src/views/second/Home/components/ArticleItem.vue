@@ -28,6 +28,8 @@
 </template>
 
 <script>
+// 1. 引入 dayjs 第三方包，将后端返回的文章发布绝对时间改为相对时间
+import dayjs from '@/utils/dayjs'
 export default {
   name: 'ArticleItem',
 
@@ -37,11 +39,12 @@ export default {
       default: () => ({}) // 默认值是一个空对象
     }
   },
+
   computed: {
     label() {
       /* eslint-disable */ 
       const { aut_name, comm_count, pubdate } = this.article
-      return `${aut_name} ${comm_count}评论 ${pubdate}`
+      return `${aut_name} ${comm_count}评论 ${dayjs(pubdate).fromNow()}`
     }
   }
 

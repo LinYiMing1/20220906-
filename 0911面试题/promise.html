@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        // 面试题：自己封装一个 Promise 构造函数，返回一个 promise 实例对象
+        // 【polyfill】：垫片
+        // -- 为了让低版本的浏览器兼容某些 es6 的高版本语法，官方原生建议开发人员根据某个语法开源的相关规范，自行封装属于自己的语法【一般都有第三方包】，这种自己封装的低版本语法就叫做高版本语法的垫片
+
+        // 1. executor 执行器函数
+        // 2. resolve()：把 promise 变成成功态；reject()：把 promise 变成失败态
+        // 3. value：记录成功的原因；reason：记录失败的原因
+        // 4. promise 有三种状态：1) pending 准备态[初始态]； 2) fulfilled 完成态； 3) rejected 拒绝态
+        // 5. promise 的状态只能改变一次，pending-->fulfilled || pending-->rejected，且只能由准备态转为别的状态
+        // 6. promise 在执行过程中，任何错误都会导致 promise 的状态变成拒绝态 rejected
+        // 7. promise 实例上必须有 then() 方法，接收两个函数作为参数，onFulfilled()：成功后执行的回调；onRejected()：失败后执行的函数
+        // 8. 设计模式：发布订阅模式：订阅一些行为，再在合适的实际去执行(发布)
+        //   - DOM 事件
+        //   - vue 中的自定义事件 $emit
+        //   - eventBus
+        //   - 还有一些第三方库，专门用来实现发布订阅模式
+        //   - promise 异步的时候
+        // 9. promise 实例不仅能链式调用 .then() 方法，还能同一个 promise 实例多次调用 .then() 方法
+
+        const PENDING = 'pending'
+        const FULFILLED = 'fulfilled'
+        const REJECTED = 'rejected'
+
+        class Promise {
+            // 1. promise 实例上的属性
+            value
+            reason
+            status = PENDING // 此 promise 状态初始值为 pending
+            onFulfilledCallBacks = [] // 默认值是一个空数组
+            onRejectedCallBacks = []  // 默认值是一个空数组
+
+            // 2. promise 实例上的执行函数
+            // - executor：Promise 构造函数接收到的 () => { } 回调函数参数
+            constructor(executor) {
+                // 01 创建两个函数作为调用 executor() 执行器函数的参数
+                const resolve = (value) => {
+                    // 判断状态码是否是初始值 pending，如果是才进入语句
+                    if (this.status === PENDING) {
+                        this.value = value
+                        this.status = FULFILLED // 调用成功函数，状态改为 fulfilled
+                        // this.onFulfilled(this.value)
+                        // 利用 forEach() 遍历数组，调用里面的匿名箭头函数，匿名函数被调用，匿名函数中包裹的 onFulfilled() 函数才真正被调用
+                        this.onFulfilledCallBacks.forEach(cd => cd())
+                    }
+                }
+
+                const reject = (reason) => {
+                    // 判断状态码是否是初始值 pending，如果是才进入语句
+                    if (this.status === PENDING) {
+                        this.reason = reason
+                        this.status = REJECTED //调用失败函数，状态改为 rejected
+                        // this.onRejected(this.reason)
+                        this.onRejectedCallBacks.forEach(cd => cd())
+                    }
+                }
+
+                // 02 调用 executor() 执行器函数的参数
+                // - 利用 try {} catch(err) {} 手动捕捉执行 executor() 函数过程中发生的错误，并抛出，这里的错误包含任何类型
+                try {
+                    executor(resolve, reject)
+                } catch (error) {
+                    reject(error)
+                }
+            }
+
+            // 3. promise 实例上的方法 --- p.then(形参1，形参2) ---  接收两个回调函数作为参数
+            then (onFulfilled, onRejected) {
+                // 01 如果状态码为 fulfilled，执行 onFulfilled() 函数并传成功的原因作为参数
+                if (this.status === FULFILLED) {
+                    onFulfilled(this.value)
+                }
+                // 02 如果状态码为 rejected，执行 onFulfilled() 函数并传失败的原因作为参数
+                if (this.status === REJECTED) {
+                    onRejected(this.reason)
+                }
+
+                // 03 如果状态码为 pending，说明 executor() 函数要执行的语句是个异步函数
+                if (this.status === PENDING) {
+                    // 异步
+                    // 订阅
+                    // 如果是异步，马上将 then() 的两个参数先保存一下
+                    // 但是保存后，我们怎么判断什么时间该执行异步函数，显然无法靠事件去标记
+                    // 我们可以直接让把 onFulfilled(), onRejected() 放在 resolve()，reject() 函数里面执行
+                    // ---------------------------
+                    // this.onFulfilled = onFulfilled
+                    // this.onRejected = onRejected
+                    // ---------------------------
+                    // 如果是异步，往相应数组中追加一个匿名箭头函数，箭头函数中还包含了一个此次收到的 onFulfilled() 函数，并传参，当匿名箭头函数被调用的时候，onFulfilled() 函数才被真正调用
+                    this.onFulfilledCallBacks.push(() => {
+                        // 多写逻辑
+                        onFulfilled(this.value)
+                    })
+                    this.onRejectedCallBacks.push(() => {
+                        onRejected(this.reason)
+                    })
+
+                }
+            }
+        }
+
+        const p1 = new Promise(() => { }) //pending
+        const p2 = new Promise((resolve) => resolve()) //fulfilled
+        const p3 = new Promise((resolve, reject) => reject()) //rejected
+        console.log(p1,);
+        console.log(p2);
+        console.log(p3);
+
+        // console.log(new Promise(() => { })); // 利用自定义 Promise 构造函数，创建 promise 实例的时候，传入一个 () => { } 回调函数作为参数
+
+        // - 这里的 resolve, reject 是形参，接收两个函数作为新参，class 里 const 的是创建两个函数，并作为实参传入() => { } 回调函数中
+        // const p = new Promise((resolve, reject) => {
+        //  同步执行语句
+        //     resolve('成功')
+        //     // reject('失败')
+        // })
+        // console.log(p);
+
+        const p = new Promise((resolve, reject) => {
+            // 异步执行语句
+            setTimeout(() => {
+                resolve('成功')
+                // reject('失败')
+            }, 3000)
+        })
+        console.log(p);
+
+        p.then(
+            (res) => console.log(res),
+            (err) => console.log(err)
+        )
+
+        p.then(
+            (res) => console.log(res),
+            (err) => console.log(err)
+        )
+
+
+    </script>
+</body>
+
+</html>

@@ -6,10 +6,12 @@
         <van-button icon="search" size="small" round block>搜索</van-button>
       </template>
     </van-nav-bar>
+
     <!-- 2. 频道及文章展示 -->
     <!-- 2.1 点击切换导航 -->
     <!--
       01 swipeable：在内容区，左右滑动切换
+      02 active：是 van-tab 的索引值
      -->
     <van-tabs v-model="active" swipeable>
       <van-tab v-for="item in channels" :key="item.id" :title="item.name">
@@ -17,8 +19,23 @@
       <!-- 内容太多，封装成 ArticleList 子组件 -->
       <article-list :id="item.id"></article-list>
       </van-tab>
-      <span class="toutiao toutiao-gengduo"></span>
+      <!-- 2.3 更多，小图标 -->
+      <span class="toutiao toutiao-gengduo" @click="isShow=true"></span>
     </van-tabs>
+
+    <!-- 3. 弹出层：默认隐藏 -->
+    <van-popup v-model="isShow" position="bottom" :style="{height: '100%'}" closeable close-icon-position="top-left">
+      <!-- 3.1 将内容拆除成单独的 ChannelEdit 子组件 -->
+      <!--
+        3.2 父组件给子组件传值
+          -- my-channels 和 myChannels 效果一样
+        3.3 子组件通过自定义事件给父组件传值，实现 active 高亮切换效果
+       -->
+       <channel-edit
+       :my-channels="channels"
+       @change-active="[(isShow=false),(active=$event)]"
+       ></channel-edit>
+    </van-popup>
   </div>
 </template>
 
@@ -31,10 +48,15 @@ import { getChannelAPI } from '@/api'
 
 // 2. 引入子组件 ArticleList
 import ArticleList from './components/ArticleList.vue'
+
+// 3. 引入子组件 ChannelEdit
+import ChannelEdit from './components/ChannelEdit.vue'
+
 export default {
   // 0.0 注册子组件
   components: {
-    ArticleList
+    ArticleList,
+    ChannelEdit
   },
 
   // 0. 初始化后钩子函数
@@ -46,7 +68,8 @@ export default {
   data() {
     return {
       active: 0,
-      channels: []
+      channels: [],
+      isShow: false
     }
   },
 
