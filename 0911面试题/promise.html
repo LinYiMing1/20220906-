@@ -28,12 +28,18 @@
         //   - 还有一些第三方库，专门用来实现发布订阅模式
         //   - promise 异步的时候
         // 9. promise 实例不仅能链式调用 .then() 方法，还能同一个 promise 实例多次调用 .then() 方法
+        // 10. promise 实例的链式调用
+        // 11. 如果 promise.then() 方法出错，我们能在下一次的 promise.then() 方法中拿到失败的原因
+        // 12. then() 方法的两个回调函数是异步【可以用宏任务和微任务实现，但是官方的 Promise 中是用微任务实现的】
+        //   - setTimeout(()=>{}) 宏任务
+        //   - queueMicrotask(()=>{}) 微任务
+        // 13. then() 方法的回调函数【成功和失败都有效果】中如果有人为手动 return 出结果，一定能在下一个 promise.then() 的【成功的回调】函数中被捕捉
 
         const PENDING = 'pending'
         const FULFILLED = 'fulfilled'
         const REJECTED = 'rejected'
 
-        class Promise {
+        class MyPromise {
             // 1. promise 实例上的属性
             value
             reason
@@ -77,7 +83,9 @@
 
             // 3. promise 实例上的方法 --- p.then(形参1，形参2) ---  接收两个回调函数作为参数
             then (onFulfilled, onRejected) {
-                // 01 如果状态码为 fulfilled，执行 onFulfilled() 函数并传成功的原因作为参数
+                // 00 断点
+                debugger
+                /* // 01 如果状态码为 fulfilled，执行 onFulfilled() 函数并传成功的原因作为参数
                 if (this.status === FULFILLED) {
                     onFulfilled(this.value)
                 }
@@ -107,12 +115,81 @@
                     })
 
                 }
+                 */
+
+                // !!!! 【可以先创建新的 promise 实例，但代码的执行顺序不会变，依然会先执行新的 promise 中的 executor(resolve, reject) 函数，也就是会先执行三个 if 语句，执行完 if 语句之后，新的 promise 实例才会被创建完毕】
+                // 04 promise.then() 方法返回一个新的 promise，实现链式调用的效果
+                const p2 = new MyPromise((resolve, reject) => {
+                    // 01 如果状态码为 fulfilled，执行 onFulfilled() 函数并传成功的原因作为参数
+                    if (this.status === FULFILLED) {
+                        queueMicrotask(() => {
+                            try {
+                                let n = onFulfilled(this.value)
+                                resolve(n)
+                            } catch (error) {
+                                // 这里的 reject() 指的是 p2 的 reject()，也就是下一次的 reject()
+                                reject(error)
+                            }
+                        })
+                    }
+                    // 02 如果状态码为 rejected，执行 onFulfilled() 函数并传失败的原因作为参数
+                    if (this.status === REJECTED) {
+                        queueMicrotask(() => {
+                            try {
+                                let n = onRejected(this.reason)
+                                resolve(n)
+                            } catch (error) {
+                                // 这里的 reject() 指的是 p2 的 reject()，也就是下一次的 reject()
+                                reject(error)
+                            }
+                        })
+                    }
+
+                    // 03 如果状态码为 pending，说明 executor() 函数要执行的语句是个异步函数
+                    if (this.status === PENDING) {
+                        // 异步
+                        // 订阅
+                        // 如果是异步，马上将 then() 的两个参数先保存一下
+                        // 但是保存后，我们怎么判断什么时间该执行异步函数，显然无法靠事件去标记
+                        // 我们可以直接让把 onFulfilled(), onRejected() 放在 resolve()，reject() 函数里面执行
+                        // ---------------------------
+                        // this.onFulfilled = onFulfilled
+                        // this.onRejected = onRejected
+                        // ---------------------------
+                        // 如果是异步，往相应数组中追加一个匿名箭头函数，箭头函数中还包含了一个此次收到的 onFulfilled() 函数，并传参，当匿名箭头函数被调用的时候，onFulfilled() 函数才被真正调用
+                        this.onFulfilledCallBacks.push(() => {
+                            queueMicrotask(() => {
+                                try {
+                                    let n = onFulfilled(this.value)
+                                    resolve(n)
+                                } catch (error) {
+                                    // 这里的 reject() 指的是 p2 的 reject()，也就是下一次的 reject()
+                                    reject(error)
+                                }
+                            })
+                        })
+                        this.onRejectedCallBacks.push(() => {
+                            queueMicrotask(() => {
+                                try {
+                                    let n = onRejected(this.reason)
+                                    resolve(n)
+                                } catch (error) {
+                                    // 这里的 reject() 指的是 p2 的 reject()，也就是下一次的 reject()
+                                    reject(error)
+                                }
+                            })
+                        })
+
+                    }
+
+                })
+                return p2
             }
         }
 
-        const p1 = new Promise(() => { }) //pending
-        const p2 = new Promise((resolve) => resolve()) //fulfilled
-        const p3 = new Promise((resolve, reject) => reject()) //rejected
+        const p1 = new MyPromise(() => { }) //pending
+        const p2 = new MyPromise((resolve) => resolve()) //fulfilled
+        const p3 = new MyPromise((resolve, reject) => reject()) //rejected
         console.log(p1,);
         console.log(p2);
         console.log(p3);
@@ -127,7 +204,7 @@
         // })
         // console.log(p);
 
-        const p = new Promise((resolve, reject) => {
+        const p = new MyPromise((resolve, reject) => {
             // 异步执行语句
             setTimeout(() => {
                 resolve('成功')
@@ -136,14 +213,28 @@
         })
         console.log(p);
 
-        p.then(
-            (res) => console.log(res),
-            (err) => console.log(err)
+        // p.then(
+        //     (res) => console.log(res),
+        //     (err) => console.log(err)
+        // )
+
+        // p.then(
+        //     (res) => console.log(res),
+        //     (err) => console.log(err)
+        // )
+
+        const p5 = p.then(
+            () => {
+                return '成功'
+            },
+            () => {
+                return '失败'
+            }
         )
 
-        p.then(
-            (res) => console.log(res),
-            (err) => console.log(err)
+        p5.then(
+            (res) => console.log('第二次成功的回调', res),
+            (error) => console.log('第二次失败的回调', error)
         )
 
 

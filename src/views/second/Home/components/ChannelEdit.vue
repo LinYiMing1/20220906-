@@ -43,6 +43,7 @@
           :key="item.id"
           :text="item.name"
           icon="plus"
+          @click="$emit('add-channel',item)"
           >
           </van-grid-item>
         </van-grid>
@@ -86,10 +87,12 @@ export default {
     },
 
     // 4.2 点击【我的频道】事件
-    dealMyChannels({ name }, index) {
+    dealMyChannels({ name, id }, index) {
       // 01 如果是编辑状态并且 item.name !== '推荐'，将该 item 从 myChannels 数组中删除
       if (this.isEdit && name !== '推荐') {
-        console.log('删除频道', name)
+        // console.log('删除频道', name)
+        // -- 通知父组件删除对应数据并传值
+        this.$emit('del-channel', id)
       } else {
         // 1. 关闭弹窗
         // 2. 切换频道
