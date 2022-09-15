@@ -9,16 +9,17 @@ export default new Vuex.Store({
     createPersistedState({
       key: 'HEIMATOUTIAO_TOKEN',
       // storage: window.sessionStorage,
-      reducer({ tokenObj, myChannels }) {
+      reducer({ tokenObj, myChannels, histories }) {
         // 函数收到的参数是 state 这个对象，可以接收参数的同时将 tokenObj 属性解构出来
-        return { tokenObj, myChannels }
+        return { tokenObj, myChannels, histories }
       }
     })
   ],
   state: {
     // 登录请求成功后后端返回的的 token
     tokenObj: {},
-    myChannels: []
+    myChannels: [],
+    histories: []
   },
   getters: {
     // 计算属性，用于标识用户是否登录
@@ -40,6 +41,13 @@ export default new Vuex.Store({
      */
     SET_CHANNELS(state, channels) {
       state.myChannels = channels
+    },
+    // 3.
+    /** 存储最新历史记录
+     * @param {Array} histories 删除或添加后最新的【搜索历史】
+     */
+    SET_HISTORIES(state, histories) {
+      state.histories = histories
     }
   }
 })

@@ -3,7 +3,14 @@
     <!-- 1. 搜索框 -->
     <van-nav-bar class="nav_bar">
       <template #title>
-        <van-button icon="search" size="small" round block>搜索</van-button>
+        <van-button
+          icon="search"
+          size="small"
+          round block
+          @click="$router.push('/search')"
+        >
+        搜索
+        </van-button>
       </template>
     </van-nav-bar>
 
@@ -72,6 +79,7 @@ import ChannelEdit from './components/ChannelEdit.vue'
 import { mapGetters, mapMutations } from 'vuex'
 
 export default {
+  name: 'Home',
   // 0.0 注册子组件
   components: {
     ArticleList,
