@@ -132,7 +132,7 @@ export default {
     async getChannel() {
       try {
         const { data } = await getChannelAPI()
-        console.log(data)
+        // console.log(data)
         this.channels = data.data.channels
       } catch (error) {
         if (!error.response) {

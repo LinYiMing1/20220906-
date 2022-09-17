@@ -1,6 +1,7 @@
 // 封装所有【用户】相关的接口[根据后端的接口文档划分]
 // 1.1 引入
 import request from '@/utils/request'
+// import { from } from 'core-js/core/array'
 
 /**
  * 登录 post 请求
@@ -10,8 +11,8 @@ import request from '@/utils/request'
  */
 export const login = (mobile, code) => {
   return request({
-    method: 'POST',
     url: '/v1_0/authorizations',
+    method: 'POST',
     data: {
       mobile,
       code
@@ -42,5 +43,56 @@ export const getUserInfoAPI = () => {
     // headers: {
     //   Authorization: `Bearer ${store.state.tokenObj.token}`
     // }
+  })
+}
+
+// 编辑更新用户个人资料
+/**
+ * 更新用户头像
+ * @param {*} file 裁剪过后的图片的 File 对象
+ * @returns Promise
+ */
+export const uploadPhotoAPI = (file) => {
+  const fm = new FormData()
+  fm.append('photo', file)
+  return request({
+    url: 'v1_0/user/photo',
+    method: 'PATCH',
+    // data:表单数据，不能传对象，否则 axios 会自动将对象转化成二进制 JSON
+    data: fm
+  })
+}
+
+/**
+ * 更新用户数据
+ * @param {String} name 用户更新的昵称
+ * @param {String} gender 用户更新的性别
+ * @param {String} birthday 用户更新的生日
+ * @returns Promise
+ */
+export const updateUserAPI = (data) => {
+  // const obj = { name, gender, birthday }
+  // const data = {}
+  // for (const k in obj) {
+  //   if (obj[k]) {
+  //     data[k] = obj[k]
+  //   }
+  // }
+  // console.log(data)
+  return request({
+    url: '/v1_0/user/profile',
+    method: 'PATCH',
+    data
+  })
+}
+
+// 获取用户个人信息
+/**
+ * 获取用户个人信息
+ * @returns Promise
+ */
+export const getUserAPI = () => {
+  return request({
+    url: '/v1_0/user/profile'
   })
 }

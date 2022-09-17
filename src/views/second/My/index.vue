@@ -18,7 +18,7 @@
 
           <van-col span="5">
             <van-row type="flex" justify="center" align="center" style="height: 100%">
-            <van-button size="mini" round class="edit_btn">编辑按钮</van-button>
+            <van-button size="mini" round class="edit_btn" @click="$router.push('/user')">编辑按钮</van-button>
             </van-row>
           </van-col>
         </van-row>
